@@ -26,6 +26,11 @@ namespace vptree {
 
     typedef vector<reference_wrapper<Node>> RefNodes;
 
+    struct SearchResult {
+        time_t time = 0;
+        Series series;
+    };
+
     struct VPTree {
         vector<Node> nodes;
         Node* root;
@@ -50,6 +55,11 @@ namespace vptree {
             // build
             auto ref_nodes = make_ref_nodes(nodes);
             root = build_level(ref_nodes);
+        }
+
+        void build(const string& data_path, const int n) {
+            auto series = load_data(data_path, n);
+            build(series);
         }
 
         pair<RefNodes, RefNodes> partition_nodes(const Node& node, float mid_dist,
@@ -94,8 +104,12 @@ namespace vptree {
             return node;
         }
 
-        Series search(const Point& query, const float range) {
-            const auto result = search_level(query, range, root);
+        SearchResult search(const Point& query, const float range) {
+            const auto start = get_now();
+            auto result = SearchResult();
+            result.series = search_level(query, range, root);
+            const auto end = get_now();
+            result.time = get_duration(start, end);
             return result;
         }
 

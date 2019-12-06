@@ -66,5 +66,5 @@ TEST(vptree, search) {
     vpt.build(series);
 
     const auto result = vpt.search(query, range);
-    ASSERT_EQ(result.size(), 4);
+    ASSERT_EQ(result.series.size(), 4);
 }

@@ -1,6 +1,8 @@
 {
   "n": 1000,
+  "n_query": 1000,
   "range": 250,
+  "distance": "euclidean",
   "data_path": "/home/arai/workspace/dataset/sift/sift_base/",
   "query_path": "/home/arai/workspace/dataset/sift/sift_query.csv",
   "save_path": "/home/arai/workspace/result/range-search/vptree/range250.csv"

@@ -68,3 +68,29 @@ TEST(vptree, search) {
     const auto result = vpt.search(query, range);
     ASSERT_EQ(result.series.size(), 4);
 }
+
+TEST(vptree, angular_search) {
+    const auto query = Point(0, {1.5, 1.5});
+    float range = 0.1;
+    int nrows = 4, ncols = 4;
+    size_t id = 0;
+
+    mt19937 engine(42);
+    normal_distribution<float> distribution(0, 1);
+
+    auto series = Series();
+    for (int i = 0; i < nrows; i++) {
+        float x = i + distribution(engine);
+        for (int j = 0; j < ncols; j++) {
+            float y = j + distribution(engine);
+            series.push_back(Point(id, {x, y}));
+            id++;
+        }
+    }
+
+    auto vpt = VPTree("angular");
+    vpt.build(series);
+
+    const auto result = vpt.search(query, range);
+    ASSERT_EQ(result.series.size(), 3);
+}

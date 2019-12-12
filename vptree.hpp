@@ -34,9 +34,12 @@ namespace vptree {
     struct VPTree {
         vector<Node> nodes;
         Node* root;
+        const DistanceFunction df;
         mt19937 engine;
 
-        VPTree(unsigned random_state = 42) : engine(mt19937(random_state)) {}
+        VPTree(const string& df = "euclidean",
+               const unsigned random_state = 42) :
+               df(select_distance(df)), engine(mt19937(random_state)) {}
 
         RefNodes make_ref_nodes(vector<Node>& process_nodes) const {
             RefNodes result;
@@ -67,7 +70,7 @@ namespace vptree {
             RefNodes inner_nodes, outer_nodes;
             for (const auto& pn : process_nodes) {
                 if (pn.get().point == node.point) continue;
-                const auto dist = euclidean_distance(node.point, pn.get().point);
+                const auto dist = df(node.point, pn.get().point);
                 if (dist <= mid_dist) inner_nodes.push_back(pn);
                 else outer_nodes.push_back(pn);
             }
@@ -92,7 +95,7 @@ namespace vptree {
                 else return mi - 1;
             }();
             const auto mid_node = process_nodes[process_nodes.size() / 2].get();
-            const float mid_dist = euclidean_distance(node->point, mid_node.point);
+            const float mid_dist = df(node->point, mid_node.point);
             node->r = mid_dist;
 
             // divide inner or outer
@@ -115,7 +118,7 @@ namespace vptree {
 
         Series search_level(const Point& query, const float range, const Node* node) {
             Series result;
-            const auto dist = euclidean_distance(query, node->point);
+            const auto dist = df(query, node->point);
 
             if (dist < range) result.push_back(node->point);
 

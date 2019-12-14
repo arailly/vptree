@@ -34,10 +34,9 @@ int main() {
     vpt.build(data_path, n);
     cout << "complete: build" << endl;
 
-    vector<SearchResult> results;
+    vector<SearchResult> results(queries.size());
     for (const auto& query : queries) {
-        const auto result = vpt.search(query, range);
-        results.push_back(result);
+        results[query.id] = vpt.search(query, range);
     }
 
     save_results(save_path, results);

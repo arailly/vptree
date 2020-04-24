@@ -27,28 +27,6 @@ TEST(vptree, partition) {
     ASSERT_EQ(outer_nodes.size(), 2);
 }
 
-TEST(vptree, build) {
-    auto series = Series<>();
-    int nrows = 3, ncols = 3;
-    size_t id = 0;
-    for (int i = 0; i < nrows; i++) {
-        float x = i;
-        for (int j = 0; j < ncols; j++) {
-            float y = j;
-            series.push_back(Data<>(id, {x, y}));
-            id++;
-        }
-    }
-
-    auto vpt = VPTree();
-    vpt.build(series);
-
-    ASSERT_EQ(vpt.root->data.id, 6);
-    ASSERT_EQ(vpt.root->inner->data.id, 3);
-    ASSERT_EQ(vpt.root->inner->inner->data.id, 4);
-    ASSERT_EQ(vpt.root->inner->outer->data.id, 7);
-}
-
 TEST(vptree, search) {
     const auto query = Data<>(0, {1.5, 1.5});
     float range = 1;
@@ -67,7 +45,7 @@ TEST(vptree, search) {
     auto vpt = VPTree();
     vpt.build(series);
 
-    const auto result = vpt.search(query, range);
+    const auto result = vpt.range_search(query, range);
     ASSERT_EQ(result.series.size(), 4);
 }
 
@@ -93,6 +71,6 @@ TEST(vptree, angular_search) {
     auto vpt = VPTree("angular");
     vpt.build(series);
 
-    const auto result = vpt.search(query, range);
+    const auto result = vpt.range_search(query, range);
     ASSERT_EQ(result.series.size(), 3);
 }

@@ -21,7 +21,9 @@ namespace vptree {
         float r;
         Node* inner;
         Node* outer;
-        Node(Data<>& p) : data(move(p)) {}
+        int n_children;
+        Node(Data<>& p) : data(move(p)), inner(nullptr), outer(nullptr),
+                          n_children(0) {}
     };
 
     typedef vector<reference_wrapper<Node>> RefNodes;
@@ -85,15 +87,6 @@ namespace vptree {
             const auto random_id = distribution(engine);
             auto* node = &(process_nodes[random_id].get());
 
-            // select middle node
-//            const auto mid_index = [random_id, &process_nodes]() {
-//                const auto mi = process_nodes.size() / 2;
-//                // unless conflict with random_id
-//                if (mi != random_id) return mi;
-//                // unless overflow
-//                else if (mi + 1 < process_nodes.size()) return mi + 1;
-//                else return mi - 1;
-//            }();
             const auto mid_node = process_nodes[process_nodes.size() / 2].get();
             const float mid_dist = df(node->data, mid_node.data);
             node->r = mid_dist;
@@ -101,13 +94,16 @@ namespace vptree {
             // divide inner or outer
             auto partitioned = partition_nodes(*node, mid_dist, process_nodes);
 
+            // calc n_children
+            node->n_children = partitioned.first.size() + partitioned.second.size();
+
             node->inner = build_level(partitioned.first);
             node->outer = build_level(partitioned.second);
 
             return node;
         }
 
-        SearchResult search(const Data<>& query, const float range) {
+        SearchResult range_search(const Data<>& query, const float range) {
             const auto start = get_now();
             auto result = SearchResult();
             result.series = search_level(query, range, root);

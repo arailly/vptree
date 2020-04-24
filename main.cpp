@@ -36,7 +36,7 @@ int main() {
 
     vector<SearchResult> results(queries.size());
     for (const auto& query : queries) {
-        results[query.id] = vpt.search(query, range);
+        results[query.id] = vpt.range_search(query, range);
     }
 
     save_results(save_path, results);

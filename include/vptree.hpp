@@ -17,24 +17,24 @@ using namespace arailib;
 
 namespace vptree {
     struct Node {
-        const Point point;
+        const Data<> data;
         float r;
         Node* inner;
         Node* outer;
-        Node(Point& p) : point(move(p)) {}
+        Node(Data<>& p) : data(move(p)) {}
     };
 
     typedef vector<reference_wrapper<Node>> RefNodes;
 
     struct SearchResult {
         time_t time = 0;
-        Series series;
+        Series<> series;
     };
 
     struct VPTree {
         vector<Node> nodes;
         Node* root;
-        const DistanceFunction df;
+        const DistanceFunction<> df;
         mt19937 engine;
 
         VPTree(const string& df = "euclidean",
@@ -47,11 +47,11 @@ namespace vptree {
             return result;
         }
 
-        void set_nodes(Series& series) {
+        void set_nodes(Series<>& series) {
             for (auto& point : series) nodes.push_back(Node(point));
         }
 
-        void build(Series& series) {
+        void build(Series<>& series) {
             // set nodes
             set_nodes(series);
 
@@ -69,8 +69,8 @@ namespace vptree {
                                                  const RefNodes& process_nodes) const {
             RefNodes inner_nodes, outer_nodes;
             for (const auto& pn : process_nodes) {
-                if (pn.get().point == node.point) continue;
-                const auto dist = df(node.point, pn.get().point);
+                if (pn.get().data == node.data) continue;
+                const auto dist = df(node.data, pn.get().data);
                 if (dist <= mid_dist) inner_nodes.push_back(pn);
                 else outer_nodes.push_back(pn);
             }
@@ -86,28 +86,28 @@ namespace vptree {
             auto* node = &(process_nodes[random_id].get());
 
             // select middle node
-            const auto mid_index = [random_id, &process_nodes]() {
-                const auto mi = process_nodes.size() / 2;
-                // unless conflict with random_id
-                if (mi != random_id) return mi;
-                // unless overflow
-                else if (mi + 1 < process_nodes.size()) return mi + 1;
-                else return mi - 1;
-            }();
+//            const auto mid_index = [random_id, &process_nodes]() {
+//                const auto mi = process_nodes.size() / 2;
+//                // unless conflict with random_id
+//                if (mi != random_id) return mi;
+//                // unless overflow
+//                else if (mi + 1 < process_nodes.size()) return mi + 1;
+//                else return mi - 1;
+//            }();
             const auto mid_node = process_nodes[process_nodes.size() / 2].get();
-            const float mid_dist = df(node->point, mid_node.point);
+            const float mid_dist = df(node->data, mid_node.data);
             node->r = mid_dist;
 
             // divide inner or outer
-            auto [inner_nodes, outer_nodes] = partition_nodes(*node, mid_dist, process_nodes);
+            auto partitioned = partition_nodes(*node, mid_dist, process_nodes);
 
-            node->inner = build_level(inner_nodes);
-            node->outer = build_level(outer_nodes);
+            node->inner = build_level(partitioned.first);
+            node->outer = build_level(partitioned.second);
 
             return node;
         }
 
-        SearchResult search(const Point& query, const float range) {
+        SearchResult search(const Data<>& query, const float range) {
             const auto start = get_now();
             auto result = SearchResult();
             result.series = search_level(query, range, root);
@@ -116,11 +116,11 @@ namespace vptree {
             return result;
         }
 
-        Series search_level(const Point& query, const float range, const Node* node) {
-            Series result;
-            const auto dist = df(query, node->point);
+        Series<> search_level(const Data<>& query, const float range, const Node* node) {
+            Series<> result;
+            const auto dist = df(query, node->data);
 
-            if (dist < range) result.push_back(node->point);
+            if (dist < range) result.push_back(node->data);
 
             if (dist - range < node->r && node->inner) {
                 const auto inner_result = search_level(query, range, node->inner);

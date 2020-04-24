@@ -8,32 +8,34 @@ using namespace arailib;
 using namespace vptree;
 
 TEST(vptree, partition) {
-    const auto p0 = Point(0, {0});
-    const auto p1 = Point(1, {1});
-    const auto p2 = Point(2, {2});
-    const auto p3 = Point(3, {3});
-    const auto p4 = Point(4, {4});
-    auto series = Series{p0, p1, p2, p3, p4};
+    const auto p0 = Data<>(0, {0});
+    const auto p1 = Data<>(1, {1});
+    const auto p2 = Data<>(2, {2});
+    const auto p3 = Data<>(3, {3});
+    const auto p4 = Data<>(4, {4});
+    auto series = Series<>{p0, p1, p2, p3, p4};
 
     auto vpt = VPTree();
     vpt.set_nodes(series);
 
     const auto ref_nodes = vpt.make_ref_nodes(vpt.nodes);
-    const auto [inner_nodes, outer_nodes] = vpt.partition_nodes(vpt.nodes[2], 1, ref_nodes);
+    const auto partitioned = vpt.partition_nodes(vpt.nodes[2], 1, ref_nodes);
+    const auto inner_nodes = partitioned.first;
+    const auto outer_nodes = partitioned.second;
 
     ASSERT_EQ(inner_nodes.size(), 2);
     ASSERT_EQ(outer_nodes.size(), 2);
 }
 
 TEST(vptree, build) {
-    auto series = Series();
+    auto series = Series<>();
     int nrows = 3, ncols = 3;
     size_t id = 0;
     for (int i = 0; i < nrows; i++) {
         float x = i;
         for (int j = 0; j < ncols; j++) {
             float y = j;
-            series.push_back(Point(id, {x, y}));
+            series.push_back(Data<>(id, {x, y}));
             id++;
         }
     }
@@ -41,23 +43,23 @@ TEST(vptree, build) {
     auto vpt = VPTree();
     vpt.build(series);
 
-    ASSERT_EQ(vpt.root->point.id, 6);
-    ASSERT_EQ(vpt.root->inner->point.id, 3);
-    ASSERT_EQ(vpt.root->inner->inner->point.id, 4);
-    ASSERT_EQ(vpt.root->inner->outer->point.id, 7);
+    ASSERT_EQ(vpt.root->data.id, 6);
+    ASSERT_EQ(vpt.root->inner->data.id, 3);
+    ASSERT_EQ(vpt.root->inner->inner->data.id, 4);
+    ASSERT_EQ(vpt.root->inner->outer->data.id, 7);
 }
 
 TEST(vptree, search) {
-    const auto query = Point(0, {1.5, 1.5});
+    const auto query = Data<>(0, {1.5, 1.5});
     float range = 1;
     int nrows = 4, ncols = 4;
     size_t id = 0;
-    auto series = Series();
+    auto series = Series<>();
     for (int i = 0; i < nrows; i++) {
         float x = i;
         for (int j = 0; j < ncols; j++) {
             float y = j;
-            series.push_back(Point(id, {x, y}));
+            series.push_back(Data<>(id, {x, y}));
             id++;
         }
     }
@@ -70,20 +72,20 @@ TEST(vptree, search) {
 }
 
 TEST(vptree, angular_search) {
-    const auto query = Point(0, {1.5, 1.5});
-    float range = 0.1;
+    const auto query = Data<>(0, {1.5, 1.5});
+    float range = 0.01;
     int nrows = 4, ncols = 4;
     size_t id = 0;
 
     mt19937 engine(42);
     normal_distribution<float> distribution(0, 1);
 
-    auto series = Series();
+    auto series = Series<>();
     for (int i = 0; i < nrows; i++) {
-        float x = i + distribution(engine);
+        float x = i;// + distribution(engine);
         for (int j = 0; j < ncols; j++) {
-            float y = j + distribution(engine);
-            series.push_back(Point(id, {x, y}));
+            float y = j;// + distribution(engine);
+            series.push_back(Data<>(id, {x, y}));
             id++;
         }
     }

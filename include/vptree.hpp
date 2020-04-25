@@ -136,17 +136,15 @@ namespace vptree {
         // recursive method for knn search
         void _knn_search(const Data<>& query, int k, const Node* node, ResultMap& result) {
             if (!node) return;
-
-            auto tail = --result.cend();
-            auto tail_dist = tail->first;
             const auto dist = df(query, node->data);
 
-            if (dist < tail->first) {
+            if (result.size() < k) result.emplace(dist, node->data);
+            else if (dist < (--result.cend())->first) {
+                result.erase(--result.cend());
                 result.emplace(dist, node->data);
-                if (result.size() > k) result.erase(tail);
-                tail = --result.cend();
-                tail_dist = tail->first;
             }
+
+            const auto tail_dist = (--result.cend())->first;
 
             if (dist - tail_dist <= node->r && node->inner)
                 _knn_search(query, k, node->inner, result);
@@ -160,7 +158,6 @@ namespace vptree {
             auto result = SearchResult();
 
             ResultMap result_map;
-            result_map.emplace(numeric_limits<float>::max(), root->data);
             _knn_search(query, k, root, result_map);
             for (const auto& e : result_map) result.series.emplace_back(e.second);
 

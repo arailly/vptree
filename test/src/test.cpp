@@ -60,9 +60,9 @@ TEST(vptree, angular_search) {
 
     auto series = Series<>();
     for (int i = 0; i < nrows; i++) {
-        float x = i;// + distribution(engine);
+        float x = i;
         for (int j = 0; j < ncols; j++) {
-            float y = j;// + distribution(engine);
+            float y = j;
             series.push_back(Data<>(id, {x, y}));
             id++;
         }
@@ -73,4 +73,28 @@ TEST(vptree, angular_search) {
 
     const auto result = vpt.range_search(query, range);
     ASSERT_EQ(result.series.size(), 3);
+}
+
+TEST(vptree, knn_search) {
+    int n_rows = 4, n_cols = 4;
+    size_t id = 0;
+    auto series = Series<>();
+    for (int i = 0; i < n_rows; i++) {
+        float x = i;
+        for (int j = 0; j < n_cols; j++) {
+            float y = j;
+            series.push_back(Data<>(id, {x, y}));
+            id++;
+        }
+    }
+
+    auto vpt = VPTree();
+    vpt.build(series);
+
+    const auto query = Data<>(0, {0, -1});
+    int k = 2;
+    const auto result = vpt.knn_search(query, k);
+    ASSERT_EQ(result.series.size(), k);
+    ASSERT_EQ(result.series[0].get().id, 0);
+    ASSERT_EQ(result.series[1].get().id, 4);
 }

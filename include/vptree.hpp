@@ -26,11 +26,11 @@ namespace vptree {
                           n_children(0) {}
     };
 
-    typedef vector<reference_wrapper<Node>> RefNodes;
+    using RefNodes = vector<reference_wrapper<Node>>;
 
     struct SearchResult {
         time_t time = 0;
-        Series<> series;
+        RefSeries<> series;
     };
 
     struct VPTree {
@@ -106,28 +106,66 @@ namespace vptree {
         SearchResult range_search(const Data<>& query, const float range) {
             const auto start = get_now();
             auto result = SearchResult();
-            result.series = search_level(query, range, root);
+            result.series = range_search_level(query, range, root);
             const auto end = get_now();
             result.time = get_duration(start, end);
             return result;
         }
 
-        Series<> search_level(const Data<>& query, const float range, const Node* node) {
-            Series<> result;
+        RefSeries<> range_search_level(const Data<>& query, const float range, const Node* node) {
+            RefSeries<> result;
             const auto dist = df(query, node->data);
 
-            if (dist < range) result.push_back(node->data);
+            if (dist < range) result.emplace_back(node->data);
 
             if (dist - range < node->r && node->inner) {
-                const auto inner_result = search_level(query, range, node->inner);
+                const auto inner_result = range_search_level(query, range, node->inner);
                 for (const auto& e : inner_result) result.push_back(e);
             }
 
             if (dist + range > node->r && node->outer) {
-                const auto outer_result = search_level(query, range, node->outer);
+                const auto outer_result = range_search_level(query, range, node->outer);
                 for (const auto& e : outer_result) result.push_back(e);
             }
 
+            return result;
+        }
+
+        using ResultMap = map<float, reference_wrapper<const Data<>>>;
+
+        // recursive method for knn search
+        void _knn_search(const Data<>& query, int k, const Node* node, ResultMap& result) {
+            if (!node) return;
+
+            auto tail = --result.cend();
+            auto tail_dist = tail->first;
+            const auto dist = df(query, node->data);
+
+            if (dist < tail->first) {
+                result.emplace(dist, node->data);
+                if (result.size() > k) result.erase(tail);
+                tail = --result.cend();
+                tail_dist = tail->first;
+            }
+
+            if (dist - tail_dist <= node->r && node->inner)
+                _knn_search(query, k, node->inner, result);
+
+            if (dist + tail_dist >= node->r && node->outer)
+                _knn_search(query, k, node->outer, result);
+        }
+
+        SearchResult knn_search(const Data<>& query, int k) {
+            const auto start = get_now();
+            auto result = SearchResult();
+
+            ResultMap result_map;
+            result_map.emplace(numeric_limits<float>::max(), root->data);
+            _knn_search(query, k, root, result_map);
+            for (const auto& e : result_map) result.series.emplace_back(e.second);
+
+            const auto end = get_now();
+            result.time = get_duration(start, end);
             return result;
         }
     };
